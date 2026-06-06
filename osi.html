@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>St Stephens Hospital - HMS</title>
+<style>
+body{font-family:Arial;background:#f5f7fa;margin:0}
+header{background:#0d47a1;color:#fff;padding:16px;text-align:center;font-size:20px;font-weight:bold}
+nav{display:flex;background:#1976d2;flex-wrap:wrap}
+nav button{flex:1;padding:10px;border:0;background:#1976d2;color:#fff;cursor:pointer;font-size:13px}
+nav button.active{background:#0d47a1}
+.container{padding:15px;max-width:1200px;margin:auto}
+.tab{display:none}.tab.active{display:block}
+.card{background:#fff;padding:12px;border-radius:6px;margin-bottom:12px;box-shadow:0 1px 3px #ccc}
+input,select,textarea,button{width:100%;padding:7px;margin:4px 0;box-sizing:border-box}
+button.flow{background:#2e7d32;color:white;border:none;cursor:pointer}
+button.flow:hover{background:#1b5e20}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}
+th,td{border:1px solid #ddd;padding:6px;text-align:left;vertical-align:top}
+th{background:#e3f2fd}
+.alert{color:red;font-weight:bold}
+.badge{background:#ff9800;color:white;padding:2px 6px;border-radius:4px;font-size:12px}
+.bed-free{background:#4caf50;color:white;padding:2px 5px;border-radius:3px}
+.bed-occupied{background:#f44336;color:white;padding:2px 5px;border-radius:3px}
+.patient-tag{background:#e3f2fd;padding:2px 5px;margin:2px;border-radius:3px;display:inline-block;font-size:12px}
+</style>
+</head>
+<body>
+<header>St Stephens Hospital - HMS</header>
+<nav>
+<button onclick="tab('patients')" class="active">Patients</button>
+<button onclick="tab('wards')">Wards & Beds</button>
+<button onclick="tab('services')">Service Prices</button>
+<button onclick="tab('medicines')">Medicine Prices</button>
+<button onclick="tab('staff')">Staff Duty</button>
+<button onclick="tab('appointments')">Appointments</button>
+<button onclick="tab('opdipd')">OPD/IPD + Flow</button>
+<button onclick="tab('billing')">Billing</button>
+<button onclick="tab('pharmacy')">Pharmacy+Lab</button>
+<button onclick="tab('inventory')">Inventory</button>
+<button onclick="tab('records')">Daily Records</button>
+<button onclick="tab('admin')">Admin</button>
+</nav>
+
+<div class="container">
+<!-- PATIENTS with Doctor + Room -->
+<div id="patients" class="tab active">
+<div class="card"><h3>Register Patient</h3>
+<input id="p_name" placeholder="Name">
+<input id="p_age" type="number" placeholder="Age">
+<select id="p_gender"><option>Male</option><option>Female</option></select>
+<select id="p_type"><option>OPD</option><option>IPD</option></select>
+<input id="p_phone" placeholder="Phone">
+<select id="p_dept" onchange="suggestDoctor()"><option>General Medicine</option><option>Cardiology</option><option>Orthopedics</option><option>Neurosurgery</option></select>
+<select id="p_doc"></select>
+<textarea id="p_hist" placeholder="Medical History"></textarea>
+<button onclick="addPatient()">Register</button></div>
+<table id="ptbl"><tr><th>Name</th><th>Type</th><th>Age</th><th>Doctor</th><th>Ward/Bed</th><th>Place</th><th>Bill</th><th>Action</th></tr></table>
+</div>
+
+<!-- WARDS & BEDS with patient per bed -->
+<div id="wards" class="tab">
+<div class="card"><h3>Add Ward</h3>
+<input id="w_name" placeholder="Ward Name e.g. Male Ward A">
+<input id="w_beds" type="number" placeholder="Total Beds in Ward">
+<button onclick="addWard()">Create Ward + Beds</button></div>
+<table id="wardtbl"><tr><th>Ward Name</th><th>Total Beds</th><th>Occupied</th><th>Free</th><th>Patients in Beds</th></tr></table>
+<table id="bedtbl"><tr><th>Ward</th><th>Bed No</th><th>Status</th><th>Patient</th></tr></table>
+</div>
+
+<!-- SERVICE PRICES with flow steps -->
+<div id="services" class="tab">
+<div class="card"><h3>Service/Step Prices</h3>
+<input id="s_name" placeholder="Service e.g. Consultation, Lab Test">
+<input id="s_price" type="number" placeholder="Amount">
+<button onclick="addService()">Add Service</button></div>
+<table id="servtbl"><tr><th>Service/Step</th><th>Amount</th></tr></table>
+</div>
+
+<!-- MEDICINE PRICES -->
+<div id="medicines" class="tab">
+<div class="card"><h3>Medicine Catalog + Prices</h3>
+<input id="m_name" placeholder="Medicine Name">
+<input id="m_price" type="number" placeholder="Price">
+<button onclick="addMedicine()">Add Medicine</button></div>
+<table id="medtbl"><tr><th>Medicine</th><th>Price</th></tr></table>
+</div>
+
+<!-- STAFF DUTY -->
+<div id="staff" class="tab"><div class="card"><h3>Add Staff + Duty Time</h3>
+<input id="st_name" placeholder="Name">
+<select id="st_role"><option>Doctor</option><option>Nurse</option><option>Lab Tech</option><option>Pharmacist</option><option>Receptionist</option></select>
+<input id="st_dept" placeholder="Department">
+<input id="st_start" type="time"><input id="st_end" type="time">
+<button onclick="addStaff()">Add Staff</button></div>
+<table id="stbl"><tr><th>Name</th><th>Role</th><th>Dept</th><th>Duty</th><th>Status Now</th></tr></table></div>
+
+<!-- APPOINTMENTS -->
+<div id="appointments" class="tab"><div class="card"><h3>Book Appointment</h3>
+<select id="a_pat"></select><select id="a_doc"></select>
+<input id="a_date" type="datetime-local">
+<select id="a_status"><option>Booked</option><option>Rescheduled</option><option>Cancelled</option></select>
+<button onclick="addApp()">Book</button></div>
+<table id="atbl"><tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Status</th></tr></table></div>
+
+<!-- OPD/IPD + FLOW -->
+<div id="opdipd" class="tab"><div class="card"><h3>Admit IPD + Assign Bed</h3>
+<select id="adm_pat"></select>
+<select id="adm_ward"></select>
+<select id="adm_bed"></select>
+<button onclick="addAdm()">Admit & Assign Bed</button></div>
+<table id="admtbl"><tr><th>Patient</th><th>Type</th><th>Ward/Bed</th><th>Place</th><th>Bill</th><th>Send To</th></tr></table></div>
+
+<!-- BILLING -->
+<div id="billing" class="tab"><div class="card"><h3>Add to Patient Bill</h3>
+<select id="b_pat"></select>
+<select id="b_svc" onchange="fillAmount()"></select>
+<input id="b_amt" type="number" placeholder="Amount" readonly>
+<button onclick="makeBill()">Add Charge</button></div>
+<table id="btbl"><tr><th>Patient</th><th>Service</th><th>Amount</th><th>Total Due</th><th>Pay</th></tr></table></div>
+
+<!-- PHARMACY + LAB -->
+<div id="pharmacy" class="tab"><div class="card"><h3>Prescription</h3>
+<select id="rx_pat"></select><select id="rx_doc"></select>
+<select id="rx_med"></select>
+<input id="rx_dose" placeholder="Dosage e.g. 1-0-1 x 5 days">
+<select id="rx_need"><option>OTC</option><option>Prescription Required</option></select>
+<textarea id="rx_tests" placeholder="Lab Tests"></textarea>
+<button onclick="addRx()">Save Rx</button></div>
+<table id="rxtbl"><tr><th>Patient</th><th>Doctor</th><th>Medicine</th><th>Dosage</th><th>Rx Flag</th><th>Tests</th></tr></table></div>
+
+<!-- INVENTORY -->
+<div id="inventory" class="tab"><div class="card"><h3>Inventory</h3>
+<input id="i_name" placeholder="Medicine"><input id="i_qty" type="number" placeholder="Qty">
+<input id="i_alert" type="number" value="10" placeholder="Alert Level">
+<button onclick="addItem()">Add Stock</button></div>
+<table id="itbl"><tr><th>Item</th><th>Qty</th><th>Status</th></tr></table></div>
+
+<!-- DAILY RECORDS -->
+<div id="records" class="tab"><div class="card"><h3>Records for <input type="date" id="rec_date" onchange="showRecords()"> </h3>
+<button onclick="showRecords('admit')">Admissions</button>
+<button onclick="showRecords('bill')">Bills</button>
+<button onclick="showRecords('discharge')">Discharges</button></div>
+<div id="recordOut"></div></div>
+
+<!-- ADMIN -->
+<div id="admin" class="tab"><div class="card"><h3>Users/Roles</h3>
+<input id="u_name" placeholder="Username"><input id="u_pass" type="password" placeholder="Password">
+<select id="u_role"><option>Admin</option><option>Doctor</option><option>Receptionist</option></select>
+<button onclick="addUser()">Add User</button></div>
+<table id="utbl"><tr><th>Username</th><th>Role</th></tr></table></div>
+</div>
+
+<script>
+let db=JSON.parse(localStorage.getItem('st_stephens_v4')||'{}');
+db.patients=db.patients||[];db.staff=db.staff||[];db.apps=db.apps||[];
+db.adm=db.adm||[];db.bills=db.bills||[];db.rx=db.rx||[];db.inv=db.inv||[];db.users=db.users||[];
+db.wards=db.wards||[];db.beds=db.beds||[];db.services=db.services||[
+{name:"Registration",price:200},
+{name:"Consultation",price:500},
+{name:"Lab Test",price:800},
+{name:"X-Ray",price:1200},
+{name:"Pharmacy Dispensing",price:300},
+{name:"IPD Bed per day",price:1500},
+{name:"Discharge",price:100}
+];
+db.medicines=db.medicines||[
+{name:"Paracetamol 500mg",price:500},
+{name:"Amoxicillin 250mg",price:2500},
+{name:"Ibuprofen 400mg",price:800},
+{name:"Metformin 500mg",price:1200},
+{name:"Amlodipine 5mg",price:1500}
+];
+
+// Seed staff
+if(db.staff.length === 0){
+  const docs = [
+    {name:"Dr. John Mukasa", dept:"General Medicine"},
+    {name:"Dr. Sarah Nalwanga", dept:"General Medicine"},
+    {name:"Dr. Peter Okello", dept:"General Medicine"},
+    {name:"Dr. Grace Achieng", dept:"Cardiology"},
+    {name:"Dr. David Ssebugwawo", dept:"Orthopedics"},
+    {name:"Dr. Michael Wabwire", dept:"Neurosurgery"},
+    {name:"Dr. Esther Nakato", dept:"Neurosurgery"}
+  ];
+  docs.forEach(d => db.staff.push({name:d.name, role:"Doctor", dept:d.dept, start:"08:00", end:"17:00"}));
+  for(let i=0; i<30; i++){
+    let shift = i < 10? "07:00-15:00" : i < 20? "15:00-23:00" : "23:00-07:00";
+    let [start, end] = shift.split("-");
+    db.staff.push({name:`Nurse ${i+1}`, role:"Nurse", dept:"Ward Nursing", start:start, end:end});
+  }
+  save();
+}
+
+function save(){localStorage.setItem('st_stephens_v4',JSON.stringify(db))}
+function tab(id){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');render()}
+document.getElementById('rec_date').value=new Date().toISOString().split('T')[0];
+
+function suggestDoctor(){
+  let dept = p_dept.value;
+  p_doc.innerHTML = db.staff.filter(s=>s.role=='Doctor' && s.dept==dept).map(d=>`<option>${d.name}</option>`).join('');
+}
+
+function addWard(){
+  let wardName=w_name.value;
+  let total=+w_beds.value;
+  db.wards.push({name:wardName,total:total});
+  for(let i=1;i<=total;i++){
+    db.beds.push({ward:wardName,bed:i,occupied:false,patient:""});
+  }
+  save();render();w_name.value=w_beds.value='';
+}
+
+function addService(){
+  db.services.push({name:s_name.value,price:+s_price.value});
+  save();render();s_name.value=s_price.value='';
+}
+
+function addMedicine(){
+  db.medicines.push({name:m_name.value,price:+m_price.value});
+  save();render();m_name.value=m_price.value='';
+}
+
+function addPatient(){
+  db.patients.push({
+    id:Date.now(),
+    name:p_name.value,
+    type:p_type.value,
+    age:p_age.value,
+    gender:p_gender.value,
+    phone:p_phone.value,
+    hist:p_hist.value,
+    dept:p_dept.value,
+    doctor:p_doc.value,
+    place:"Reception",
+    bill:0,
+    bed:"",
+    ward:""
+  });
+  save();render();p_name.value=p_age.value=p_phone.value=p_hist.value='';
+}
+
+function addAdm(){
+  let pat = db.patients.find(p=>p.name==adm_pat.value);
+  let bed = db.beds.find(b=>b.ward==adm_ward.value && b.bed==+adm_bed.value);
+  if(bed &&!bed.occupied){
+    bed.occupied=true; bed.patient=adm_pat.value;
+    db.adm.push({pat:adm_pat.value,type:"IPD",ward:adm_ward.value,bed:adm_bed.value,place:"Reception",date:Date.now()});
+    if(pat){pat.place="Reception"; pat.bed=adm_bed.value; pat.ward=adm_ward.value; pat.type="IPD";}
+    save();render();
+  } else alert("Bed not available");
+}
+
+function sendToNext(patName){
+  let adm = db.adm.find(a=>a.pat==patName);
+  let pat = db.patients.find(p=>p.name==patName);
+  if(adm){
+    let idx = places.indexOf(adm.place);
+    if(idx < places.length-1){adm.place = places[idx+1]; pat.place = places[idx+1];}
+    if(adm.place=="Discharge"){
+      adm.dischargeDate=Date.now();
+      let bed = db.beds.find(b=>b.ward==pat.ward && b.bed==+pat.bed);
+      if(bed){bed.occupied=false; bed.patient="";}
+      pat.bed=""; pat.ward="";
+    }
+  }
+  save();render();
+}
+
+function fillAmount(){
+  let svc = db.services.find(s=>s.name==b_svc.value);
+  b_amt.value = svc?svc.price:"";
+}
+
+function makeBill(){
+  let pat = db.patients.find(p=>p.name==b_pat.value);
+  let svc = db.services.find(s=>s.name==b_svc.value);
+  db.bills.push({pat:b_pat.value,svc:b_svc.value,amt:svc.price,time:Date.now(),paid:0});
+  if(pat) pat.bill += svc.price;
+  save();render();
+}
+
+function payBill(i){
+  let m = prompt('Choose payment method\n1.Cash 2.Card 3.Mobile Money 4.Insurance');
+  if(!m) return;
+  let methods = ["","Cash","Card","Mobile Money","Insurance"];
+  db.bills[i].method = methods[m];
+  db.bills[i].paid = 1;
+  let pat = db.patients.find(p=>p.name==db.bills[i].pat);
+  if(pat) pat.bill = 0;
+  alert('Paid via ' + methods[m]);
+  save();render();
+}
+
+// rest of your functions addStaff, addApp, addRx, addItem, addUser, showRecords...
+
+function render(){
+  let opts=db.patients.map(p=>`<option>${p.name}</option>`).join('');
+  let docs=db.staff.filter(s=>s.role=='Doctor').map(s=>`<option>${s.name}</option>`).join('');
+  let wardOpts=db.wards.map(w=>`<option>${w.name}</option>`).join('');
+  let svcOpts=db.services.map(s=>`<option>${s.name}</option>`).join('');
+  let medOpts=db.medicines.map(m=>`<option>${m.name}</option>`).join('');
+
+  a_pat.innerHTML=adm_pat.innerHTML=b_pat.innerHTML=rx_pat.innerHTML=opts;
+  a_doc.innerHTML=rx_doc.innerHTML=docs;
+  adm_ward.innerHTML=wardOpts;
+  b_svc.innerHTML=svcOpts; fillAmount();
+  rx_med.innerHTML=medOpts;
+
+  let admWard=adm_ward.value;
+  adm_bed.innerHTML=db.beds.filter(b=>b.ward==admWard &&!b.occupied).map(b=>`<option>${b.bed}</option>`).join('');
+
+  // 1. Patients table now shows Doctor + Ward/Bed
+  ptbl.innerHTML='<tr><th>Name</th><th>Type</th><th>Age</th><th>Doctor</th><th>Ward/Bed</th><th>Place</th><th>Bill</th><th>Action</th></tr>'+
+  db.patients.map(p=>`<tr><td>${p.name}</td><td><span class="badge">${p.type}</span></td><td>${p.age}</td><td>${p.doctor||'-'}</td><td>${p.ward? p.ward+' Bed '+p.bed:'-'}</td><td>${p.place}</td><td>${p.bill}</td><td><button class="flow" onclick="sendToNext('${p.name}')">Next →</button></td></tr>`).join('');
+
+  // 2. Wards table shows patient name per bed
+  wardtbl.innerHTML='<tr><th>Ward Name</th><th>Total Beds</th><th>Occupied</th><th>Free</th><th>Patients in Beds</th></tr>'+
+  db.wards.map(w=>{
+    let bedsInWard = db.beds.filter(b=>b.ward==w.name).sort((a,b)=>a.bed-b.bed);
+    let occ = bedsInWard.filter(b=>b.occupied).length;
+    let patientTags = bedsInWard.map(b=>{
+      if(b.occupied){
+        return `<span class="patient-tag">Bed ${b.bed}: ${b.patient}</span>`;
+      } else {
+        return `<span style="color:#999">Bed ${b.bed}: Free</span>`;
+      }
+    }).join(' ');
+    return `<tr><td>${w.name}</td><td>${w.total}</td><td>${occ}</td><td>${w.total-occ}</td><td>${patientTags}</td></tr>`;
+  }).join('');
+
+  bedtbl.innerHTML='<tr><th>Ward</th><th>Bed No</th><th>Status</th><th>Patient</th></tr>'+
+  db.beds.map(b=>`<tr><td>${b.ward}</td><td>${b.bed}</td><td>${b.occupied?'<span class="bed-occupied">Occupied</span>':'<span class="bed-free">Free</span>'}</td><td>${b.patient||'-'}</td></tr>`).join('');
+
+  // 3. All services/steps with amounts
+  servtbl.innerHTML='<tr><th>Service/Step</th><th>Amount</th></tr>'+
+  db.services.map(s=>`<tr><td>${s.name}</td><td>UGX ${s.price.toLocaleString()}</td></tr>`).join('');
+
+  // 4. All medicines with costs
+  medtbl.innerHTML='<tr><th>Medicine</th><th>Price</th></tr>'+
+  db.medicines.map(m=>`<tr><td>${m.name}</td><td>UGX ${m.price.toLocaleString()}</td></tr>`).join('');
+
+  // Doctor dropdown for new patient registration
+  suggestDoctor();
+
+  let now = new Date().toTimeString().slice(0,5);
+  stbl.innerHTML='<tr><th>Name</th><th>Role</th><th>Dept</th><th>Duty</th><th>Status Now</th></tr>'+
+  db.staff.map(s=>{
+    let onDuty = s.start<=now && now<=s.end;
+    return `<tr><td>${s.name}</td><td>${s.role}</td><td>${s.dept}</td><td>${s.start}-${s.end}</td><td>${onDuty?'<span class="alert">ON DUTY</span>':'Off'}</td></tr>`;
+  }).join('');
+
+  // keep rest of your render code for atbl, admtbl, btbl, rxtbl, itbl, utbl...
+}
+render();
+</script>
+</body>
+</html>
